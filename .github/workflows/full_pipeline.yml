@@ -1,0 +1,163 @@
+name: Full Video Production Pipeline
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # Runs at 00:00 UTC (midnight)
+    - cron: '0 8 * * *'   # Runs at 08:00 UTC (8 AM)
+    - cron: '0 16 * * *'  # Runs at 16:00 UTC (4 PM)
+  
+  workflow_dispatch:
+    inputs:
+      privacy:
+        description: 'YouTube video privacy'
+        required: true
+        default: 'public'
+        type: choice
+        options:
+          - public
+          - unlisted
+          - private
+
+jobs:
+  video-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60  # 1 hour max
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Cache system dependencies
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /usr/bin/ffmpeg
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/full_pipeline.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+      
+      - name: Install system dependencies
+        if: steps.cache-apt.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ffmpeg \
+            libsndfile1 \
+            libavcodec-extra \
+            fonts-liberation
+      
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      
+      - name: Install Playwright browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+      
+      - name: Create required directories
+        run: |
+          mkdir -p downloads edited work state config
+      
+      - name: Setup CapCut session
+        run: |
+          echo '${{ secrets.PROVEN_SESSION }}' > state/proven_session.json
+      
+      - name: Setup Google Sheets credentials
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > google_credentials.json
+      
+      - name: Setup YouTube credentials
+        run: |
+          echo '${{ secrets.YOUTUBE_CREDENTIALS }}' > youtube_credentials.json
+          echo '${{ secrets.YOUTUBE_TOKEN }}' > youtube_token.json
+      
+      - name: Setup manifest with API key
+        run: |
+          python -c "import json; manifest = json.load(open('manifest.json', 'r')); manifest['openrouter_api_key'] = '${{ secrets.OPENROUTER_API_KEY }}'; manifest['input_video'] = 'AUTO_DETECT'; manifest['output_video'] = 'AUTO_DETECT'; json.dump(manifest, open('manifest.json', 'w'), indent=2)"
+          echo "=== Manifest Configuration ==="
+          cat manifest.json
+          echo ""
+          echo "=== Background Music File Check ==="
+          ls -lh background.mp3 || echo "WARNING: background.mp3 not found!"
+      
+      - name: Run Full Pipeline
+        env:
+          CI: true
+          GITHUB_ACTIONS: true
+        run: |
+          python run_full_pipeline.py --privacy ${{ github.event.inputs.privacy || 'public' }}
+      
+      - name: Upload raw video as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-video-${{ github.run_number }}
+          path: downloads/*.mp4
+          retention-days: 7
+          if-no-files-found: warn
+      
+      - name: Upload edited video as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edited-video-${{ github.run_number }}
+          path: |
+            edited/*.mp4
+            edited/*.srt
+            edited/*.metadata.json
+            edited/*.txt
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-logs-${{ github.run_number }}
+          path: |
+            *.log
+            work/edit_state.json
+            state/job_states.json
+          retention-days: 7
+          if-no-files-found: ignore
+      
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f youtube_credentials.json youtube_token.json
+          rm -f google_credentials.json
+          rm -f state/proven_session.json
+      
+      - name: Report status
+        if: always()
+        run: |
+          echo "Pipeline Status: ${{ job.status }}"
+          echo "Run Number: ${{ github.run_number }}"
+          echo "Privacy Setting: ${{ github.event.inputs.privacy || 'public' }}"
+          
+          if [ -d "edited" ] && [ "$(ls -A edited/*.mp4 2>/dev/null)" ]; then
+            echo "✅ Edited videos created successfully"
+            ls -lh edited/
+          else
+            echo "⚠️ No edited videos found"
+          fi

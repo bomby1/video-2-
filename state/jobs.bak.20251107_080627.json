@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "created_at": "2025-11-07T05:24:48.000751",
+    "version": "1.0.0",
+    "total_jobs": 1,
+    "last_updated": "2025-11-07T08:03:56.640073"
+  },
+  "jobs": {
+    "job_001": {
+      "job_id": "job_001",
+      "job_data": {
+        "title": "best real horror story",
+        "visual_style": "Whimsical",
+        "voice": "Calm Dubing",
+        "duration": 60,
+        "aspect_ratio": "16:9",
+        "video_generation": "",
+        "resolution": "1080p",
+        "frame_rate": "60fps",
+        "created_date": "2024-01-15",
+        "notes": "Quick tips and tricks"
+      },
+      "status": "in_progress",
+      "created_at": "2025-11-07T08:03:36.022641",
+      "updated_at": "2025-11-07T08:03:56.638062",
+      "attempts": 1,
+      "max_attempts": 3,
+      "last_error": null,
+      "diagnostics": [],
+      "current_step": "starting",
+      "start_time": "2025-11-07T08:03:56.638062",
+      "end_time": null,
+      "export_metadata": null
+    }
+  }
+}

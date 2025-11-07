@@ -1,0 +1,286 @@
+{
+  "_metadata": {
+    "description": "CapCut Automation Selector Catalog",
+    "version": "1.0.0",
+    "last_updated": "2025-10-11",
+    "notes": "Selectors are tried in priority order: text/aria → CSS → XPath. Templates are used for visual fallback."
+  },
+  
+  "LOGIN_EMAIL_INPUT": {
+    "description": "Email input field on login page",
+    "selectors": [
+      "input[aria-label*='email' i]",
+      "input[placeholder*='email' i]",
+      "input[type='email']",
+      "input[name='email']",
+      "input[id*='email' i]",
+      "//input[contains(@placeholder, 'email') or contains(@aria-label, 'email')]"
+    ],
+    "template": "login_email_input.png"
+  },
+  
+  "LOGIN_PASSWORD_INPUT": {
+    "description": "Password input field on login page",
+    "selectors": [
+      "input[aria-label*='password' i]",
+      "input[type='password']",
+      "input[name='password']",
+      "input[id*='password' i]",
+      "//input[@type='password']"
+    ],
+    "template": "login_password_input.png"
+  },
+  
+  "LOGIN_SUBMIT_BUTTON": {
+    "description": "Login/Sign in submit button",
+    "selectors": [
+      "button:has-text('Log in')",
+      "button:has-text('Sign in')",
+      "button[type='submit']",
+      "input[type='submit']",
+      "button[aria-label*='login' i]",
+      "//button[contains(text(), 'Log in') or contains(text(), 'Sign in')]"
+    ],
+    "template": "login_submit_button.png"
+  },
+  
+  "CREATE_WITH_AI_BUTTON": {
+    "description": "Create with AI button on dashboard",
+    "selectors": [
+      "button:has-text('Create with AI')",
+      "button:has-text('AI Video')",
+      "[data-testid='create-ai-button']",
+      ".create-ai-btn",
+      "button[class*='ai-create']",
+      "//button[contains(text(), 'AI') and contains(text(), 'Create')]"
+    ],
+    "template": "create_with_ai_button.png"
+  },
+  
+  "STYLE_DROPDOWN": {
+    "description": "Video style selection dropdown (Realistic Film, etc.)",
+    "selectors": [
+      "button:has-text('Realistic Film')",
+      "div:has-text('Realistic Film')",
+      "[data-testid='style-select']",
+      "button[aria-label*='style' i]",
+      "div[role='button']:has-text('Realistic')",
+      ".style-dropdown",
+      "//button[contains(text(), 'Realistic') or contains(text(), 'Film')]"
+    ],
+    "template": "style_dropdown.png"
+  },
+  
+  "VOICE_DROPDOWN": {
+    "description": "Voice selection dropdown (Ms. Labebe, etc.)",
+    "selectors": [
+      "button:has-text('Ms. Labebe')",
+      "div:has-text('Ms. Labebe')",
+      "[data-testid='voice-select']",
+      "button[aria-label*='voice' i]",
+      "div[role='button']:has-text('Ms.')",
+      ".voice-dropdown",
+      "//button[contains(text(), 'Ms.') or contains(text(), 'Labebe')]"
+    ],
+    "template": "voice_dropdown.png"
+  },
+  
+  "DURATION_DROPDOWN": {
+    "description": "Video duration selection dropdown (1 min, etc.)",
+    "selectors": [
+      "button:has-text('1 min')",
+      "div:has-text('1 min')",
+      "[data-testid='duration-select']",
+      "button[aria-label*='duration' i]",
+      "div[role='button']:has-text('min')",
+      ".duration-dropdown",
+      "//button[contains(text(), 'min') or contains(text(), 'duration')]"
+    ],
+    "template": "duration_dropdown.png"
+  },
+  
+  "ASPECT_RATIO_CONTROL": {
+    "description": "Aspect ratio selection control (16:9, etc.)",
+    "selectors": [
+      "button:has-text('16:9')",
+      "div:has-text('16:9')",
+      "[data-testid='aspect-ratio']",
+      "button[aria-label*='aspect ratio' i]",
+      "div[role='button']:has-text('16:')",
+      ".aspect-ratio-control",
+      "//button[contains(text(), '16:9') or contains(text(), 'aspect')]"
+    ],
+    "template": "aspect_ratio_control.png"
+  },
+  
+  "TITLE_INPUT": {
+    "description": "Video description input field (describe your video idea)",
+    "selectors": [
+      "textarea[placeholder*='Describe your video idea' i]",
+      "textarea[placeholder*='video idea' i]",
+      "textarea[placeholder*='describe' i]",
+      "input[placeholder*='Describe your video idea' i]",
+      "input[placeholder*='video idea' i]",
+      "[data-testid='video-description']",
+      "textarea",
+      "//textarea[contains(@placeholder, 'Describe') or contains(@placeholder, 'video')]"
+    ],
+    "template": "title_input.png"
+  },
+  
+  "GENERATE_BUTTON": {
+    "description": "Generate video button",
+    "selectors": [
+      "button:has-text('Generate')",
+      "button:has-text('Create Video')",
+      "[data-testid='generate-button']",
+      ".generate-btn",
+      "button[aria-label*='generate' i]",
+      "//button[contains(text(), 'Generate') or contains(text(), 'Create')]"
+    ],
+    "template": "generate_button.png"
+  },
+  
+  "GENERATION_PROGRESS_ELEMENT": {
+    "description": "Video generation progress indicator",
+    "selectors": [
+      "[role='progressbar']",
+      ".progress-bar",
+      "[data-testid='generation-progress']",
+      ".generation-status",
+      "[aria-label*='progress' i]",
+      "//div[contains(@class, 'progress') or contains(@role, 'progressbar')]"
+    ],
+    "template": "generation_progress.png"
+  },
+  
+  "EXPORT_BUTTON": {
+    "description": "Export/Download video button",
+    "selectors": [
+      "button:has-text('Export')",
+      "button:has-text('Download')",
+      "[data-testid='export-button']",
+      ".export-btn",
+      "button[aria-label*='export' i]",
+      "//button[contains(text(), 'Export') or contains(text(), 'Download')]"
+    ],
+    "template": "export_button.png"
+  },
+  
+  "EXPORT_FILENAME_INPUT": {
+    "description": "Export filename input field",
+    "selectors": [
+      "input[aria-label*='filename' i]",
+      "input[placeholder*='name' i]",
+      "input[name*='filename']",
+      "[data-testid='filename-input']",
+      "input[id*='name']",
+      "//input[contains(@placeholder, 'name') or contains(@aria-label, 'filename')]"
+    ],
+    "template": "export_filename_input.png"
+  },
+  
+  "EXPORT_FORMAT_DROPDOWN": {
+    "description": "Export format selection dropdown",
+    "selectors": [
+      "select[aria-label*='format' i]",
+      "select[name*='format']",
+      "[data-testid='format-select']",
+      ".format-dropdown",
+      "select[id*='format']",
+      "//select[contains(@aria-label, 'format') or contains(@name, 'format')]"
+    ],
+    "template": "export_format_dropdown.png"
+  },
+  
+  "EXPORT_FRAME_RATE_DROPDOWN": {
+    "description": "Export frame rate selection dropdown",
+    "selectors": [
+      "select[aria-label*='frame rate' i]",
+      "select[name*='framerate']",
+      "[data-testid='framerate-select']",
+      ".framerate-dropdown",
+      "select[id*='fps']",
+      "//select[contains(@aria-label, 'frame') or contains(@name, 'fps')]"
+    ],
+    "template": "export_framerate_dropdown.png"
+  },
+  
+  "EXPORT_QUALITY_DROPDOWN": {
+    "description": "Export quality selection dropdown",
+    "selectors": [
+      "select[aria-label*='quality' i]",
+      "select[name*='quality']",
+      "[data-testid='quality-select']",
+      ".quality-dropdown",
+      "select[id*='quality']",
+      "//select[contains(@aria-label, 'quality') or contains(@name, 'quality')]"
+    ],
+    "template": "export_quality_dropdown.png"
+  },
+  
+  "EXPORT_RESOLUTION_DROPDOWN": {
+    "description": "Export resolution selection dropdown",
+    "selectors": [
+      "select[aria-label*='resolution' i]",
+      "select[name*='resolution']",
+      "[data-testid='resolution-select']",
+      ".resolution-dropdown",
+      "select[id*='resolution']",
+      "//select[contains(@aria-label, 'resolution') or contains(@name, 'resolution')]"
+    ],
+    "template": "export_resolution_dropdown.png"
+  },
+  
+  "EXPORT_TITLE_INPUT": {
+    "description": "Export video title input field",
+    "selectors": [
+      "input[aria-label*='title' i]",
+      "input[placeholder*='title' i]",
+      "input[name*='title']",
+      "[data-testid='title-input']",
+      "input[id*='title']",
+      "//input[contains(@placeholder, 'title') or contains(@aria-label, 'title')]"
+    ],
+    "template": "export_title_input.png"
+  },
+  
+  "EXPORT_DIALOG": {
+    "description": "Export dialog container",
+    "selectors": [
+      "[role='dialog'][aria-label*='export' i]",
+      ".export-dialog",
+      "[data-testid='export-modal']",
+      ".modal[class*='export']",
+      "div[id*='export-dialog']",
+      "//div[contains(@class, 'export') and contains(@class, 'dialog')]"
+    ],
+    "template": "export_dialog.png"
+  },
+  
+  "EXPORT_COMPLETE_INDICATOR": {
+    "description": "Export completion indicator or message",
+    "selectors": [
+      "[data-testid='export-complete']",
+      ".export-success",
+      "[aria-label*='export complete' i]",
+      "div:has-text('Export complete')",
+      ".success-message",
+      "//div[contains(text(), 'Export') and contains(text(), 'complete')]"
+    ],
+    "template": "export_complete.png"
+  },
+  
+  "EXPORT_PROGRESS_BAR": {
+    "description": "Export progress bar or indicator",
+    "selectors": [
+      "[role='progressbar']",
+      ".progress-bar",
+      "[data-testid='export-progress']",
+      ".export-progress",
+      "progress",
+      "//div[contains(@class, 'progress') or @role='progressbar']"
+    ],
+    "template": "export_progress.png"
+  }
+}

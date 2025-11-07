@@ -1,0 +1,84 @@
+How to Get YouTube Credential Files
+Based on your project, you need three JSON files. Here's how to obtain each one:
+
+1. 
+youtube_credentials.json
+ (OAuth 2.0 Client ID)
+This is your main API credentials file from Google Cloud Console.
+
+Steps:
+Go to Google Cloud Console
+Create a new project:
+Click "Select a project" → "New Project"
+Name it: "YouTube Video Uploader" (or any name)
+Click "Create"
+Enable YouTube Data API v3:
+Go to: APIs & Services → Library
+Search for "YouTube Data API v3"
+Click on it → Click "Enable"
+Configure OAuth Consent Screen:
+Go to: APIs & Services → OAuth consent screen
+Choose "External" → Click "Create"
+Fill in:
+App name: "YouTube Video Uploader"
+User support email: Your email
+Developer contact: Your email
+Click "Save and Continue"
+Add your email as a test user
+Click "Save and Continue"
+Create OAuth 2.0 Client ID:
+Go to: APIs & Services → Credentials
+Click "Create Credentials" → "OAuth client ID"
+Application type: "Desktop app"
+Name: "YouTube Uploader"
+Click "Create"
+Download the JSON file:
+Click the download icon (⬇️) next to your newly created OAuth client
+Rename it to: 
+youtube_credentials.json
+Move it to your project root: c:\Users\2002\CascadeProjects\project\perfectly uploading to youtube auto successfully but before github setup(renamed only)\
+2. youtube_token.json (Auto-generated)
+This file is automatically created when you first authenticate.
+
+Steps:
+Make sure youtube_credentials.json is in your project root
+Run your first upload:
+bash
+py youtube_uploader.py --video "edited/YourVideo_EDITED.mp4"
+What happens:
+A browser window opens automatically
+Sign in with your YouTube/Google account
+You'll see "This app isn't verified" warning → Click "Continue" (it's safe, it's your own app)
+Click "Allow" to grant permissions
+The file youtube_token.json is automatically created in your project root
+Future uploads: No browser needed, it uses the saved token
+3. google_credentials.json (For other Google services)
+This appears to be for other Google API services in your project (not YouTube-specific).
+
+
+we will use same google credentials for google sheet ...no need to do any other thing except that browser setup,tesh paxe youtube token will be auto made by script...
+
+youtube credentials from youtube data v3 (do not forget to add test user and publish the app ,so that the token wont expire)
+
+google sheet ma new sheet create garne and sheet id rakhnee 
+
+also to share the sheet with google-sheet-bot-for-youtube@fb-insta-video-upload.iam.gserviceaccount.com
+
+
+upload the api key in menefist to check locally ,later delete it 
+
+need to install two 
+
+py -m pip install -r requirements.txt   (for local editing check and upload check
+
+
+py -m pip install gspread google-auth google-auth-oauthlib google-auth-httplib2     (for google sheet load )
+
+py -m pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client     (for youtube token json file )
+
+C:\Users\2002\CascadeProjects\project\bomby\src>py main.py
+
+
+
+
+
