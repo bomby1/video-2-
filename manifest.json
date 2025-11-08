@@ -13,7 +13,7 @@
   "_effects_comment": "Core engagement features (ALWAYS ON for professional YouTube videos!)",
   "apply_transitions": false,
   "apply_zoom_effects": false,
-  "add_sound_effects": true,
+  "add_sound_effects": false,
   "add_subtitles": false,
   "add_subscribe_popup": false,
   "_music_comment": "Background music with smooth blending (ENABLED for engagement!)",
