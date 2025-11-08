@@ -1154,38 +1154,8 @@ class CapCutOrchestrator:
             
             if downloaded_file:
                 print(f"✅ Video downloaded successfully: {downloaded_file}")
-                
-                # Run auto video editing
-                print("\n🎬 Running auto video editor...")
-                try:
-                    import subprocess
-                    result = subprocess.run([
-                        sys.executable, "auto_edit.py", 
-                        "--manifest", "manifest.json", 
-                        "--work-dir", "work"
-                    ], cwd=str(self.project_root), timeout=1800)
-                    
-                    if result.returncode == 0:
-                        print("✅ Video editing completed!")
-                        
-                        # Run YouTube upload
-                        print("\n📤 Running YouTube uploader...")
-                        edited_video = f"edited/{Path(downloaded_file).stem}_EDITED.mp4"
-                        upload_result = subprocess.run([
-                            sys.executable, "youtube_uploader.py",
-                            "--video", edited_video,
-                            "--privacy", "public"
-                        ], cwd=str(self.project_root), timeout=600)
-                        
-                        if upload_result.returncode == 0:
-                            print("✅ YouTube upload completed!")
-                            print("🎉 Complete pipeline finished!")
-                        else:
-                            print("⚠️ YouTube upload failed")
-                    else:
-                        print("⚠️ Video editing failed")
-                except Exception as e:
-                    print(f"⚠️ Error running editing/upload: {e}")
+                print(f"📁 Saved to: {downloaded_file}")
+                print("\nℹ️  Video editing and YouTube upload will be handled by the pipeline orchestrator")                
             else:
                 print("⚠️ Video download failed, but export was successful")
             
