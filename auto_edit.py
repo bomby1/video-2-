@@ -17,11 +17,16 @@ from dataclasses import dataclass, asdict
 import logging
 from datetime import datetime
 
-# Configure logging
+# Configure logging with immediate flush for GitHub Actions
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
 )
+# Force unbuffered output
+logging.StreamHandler.flush = lambda self: sys.stdout.flush()
 logger = logging.getLogger(__name__)
 
 
@@ -846,91 +851,120 @@ Return ONLY valid JSON in this exact format:
   "hashtags": ["#hashtag1", "#hashtag2", ... 10 hashtags total]
 }}"""
         
-        # Retry logic for GitHub Actions (network can be flaky)
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"API request attempt {attempt + 1}/{max_retries}...")
+        # Try multiple free models as fallback
+        free_models = [
+            "meta-llama/llama-3.2-3b-instruct:free",  # Primary: tested and working
+            "google/gemini-2.0-flash-exp:free",       # Backup 1: Google's free tier
+            "qwen/qwen-2-7b-instruct:free",           # Backup 2: Alibaba's model
+        ]
+        
+        # Try each model with retry logic
+        for model_id in free_models:
+            logger.info(f"Trying model: {model_id}")
+            sys.stdout.flush()
+            
+            max_retries = 2  # 2 retries per model (total 3 attempts per model)
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"  Attempt {attempt + 1}/{max_retries}...")
+                    sys.stdout.flush()
+                    
+                    response = requests.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json",
+                            "HTTP-Referer": "https://github.com",
+                            "X-Title": "Auto Video Editor"
+                        },
+                        json={
+                            "model": model_id,
+                            "messages": [
+                                {"role": "system", "content": "You are a YouTube SEO expert. Always respond with valid JSON only."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            "temperature": 0.7,
+                            "max_tokens": 2000
+                        },
+                        timeout=60
+                    )
                 
-                response = requests.post(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "https://github.com",  # Optional: for OpenRouter analytics
-                        "X-Title": "Auto Video Editor"  # Optional: app name
-                    },
-                    json={
-                        "model": "deepseek/deepseek-chat",
-                        "messages": [
-                            {"role": "system", "content": "You are a YouTube SEO expert. Always respond with valid JSON only."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        "temperature": 0.7,
-                        "max_tokens": 2000  # Increased for 25 tags + 10 hashtags
-                    },
-                    timeout=60  # Longer timeout for GitHub Actions
-                )
-                
-                if response.status_code == 200:
-                    content = response.json()['choices'][0]['message']['content']
-                    
-                    # Extract JSON from response (handle markdown code blocks)
-                    import re
-                    # Try to find JSON in code block first
-                    code_block_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
-                    if code_block_match:
-                        json_str = code_block_match.group(1)
-                    else:
-                        # Try to find raw JSON
-                        json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                        if json_match:
-                            json_str = json_match.group()
-                        else:
-                            logger.warning("No JSON found in AI response")
-                            continue
-                    
-                    # Parse JSON
-                    metadata = json.loads(json_str)
-                    
-                    # Validate required fields
-                    required_fields = ['title', 'description', 'tags', 'hashtags']
-                    if all(field in metadata for field in required_fields):
-                        logger.info("✅ AI metadata generated successfully!")
-                        return metadata
-                    else:
-                        logger.warning(f"Missing required fields in metadata: {metadata.keys()}")
-                        continue
+                    if response.status_code == 200:
+                        content = response.json()['choices'][0]['message']['content']
                         
-                elif response.status_code == 429:
-                    logger.warning("Rate limited, waiting 5 seconds...")
-                    import time
-                    time.sleep(5)
-                    continue
-                else:
-                    logger.warning(f"API request failed: {response.status_code} - {response.text}")
+                        # Extract JSON from response (handle markdown code blocks)
+                        import re
+                        # Try to find JSON in code block first
+                        code_block_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
+                        if code_block_match:
+                            json_str = code_block_match.group(1)
+                        else:
+                            # Try to find raw JSON
+                            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                            if json_match:
+                                json_str = json_match.group()
+                            else:
+                                logger.warning(f"  No JSON found in response from {model_id}")
+                                break  # Try next model
+                        
+                        # Parse JSON
+                        try:
+                            metadata = json.loads(json_str)
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"  JSON parse error: {e}")
+                            break  # Try next model
+                        
+                        # Validate required fields
+                        required_fields = ['title', 'description', 'tags', 'hashtags']
+                        if all(field in metadata for field in required_fields):
+                            logger.info(f"✅ AI metadata generated successfully with {model_id}!")
+                            sys.stdout.flush()
+                            return metadata
+                        else:
+                            logger.warning(f"  Missing required fields: {[f for f in required_fields if f not in metadata]}")
+                            break  # Try next model
+                            
+                    elif response.status_code == 429:
+                        wait_time = 5 * (attempt + 1)  # Exponential backoff: 5s, 10s
+                        logger.warning(f"  Rate limited (429), waiting {wait_time}s...")
+                        sys.stdout.flush()
+                        import time
+                        time.sleep(wait_time)
+                        continue  # Retry same model
+                    elif response.status_code == 402:
+                        logger.warning(f"  Model {model_id} requires credits (402), trying next model...")
+                        sys.stdout.flush()
+                        break  # Try next model (no point retrying)
+                    elif response.status_code == 404:
+                        logger.warning(f"  Model {model_id} not found (404), trying next model...")
+                        sys.stdout.flush()
+                        break  # Try next model
+                    else:
+                        logger.warning(f"  API error {response.status_code}: {response.text[:100]}")
+                        if attempt < max_retries - 1:
+                            import time
+                            time.sleep(2)
+                            continue  # Retry same model
+                        break  # Try next model after all retries
+                        
+                except requests.exceptions.Timeout:
+                    logger.warning(f"  Request timeout (attempt {attempt + 1}/{max_retries})")
                     if attempt < max_retries - 1:
                         import time
                         time.sleep(2)
-                        continue
-                    return None
-                    
-            except requests.exceptions.Timeout:
-                logger.warning(f"Request timeout (attempt {attempt + 1}/{max_retries})")
-                if attempt < max_retries - 1:
-                    import time
-                    time.sleep(2)
-                    continue
-                return None
-            except Exception as e:
-                logger.warning(f"AI metadata generation error: {e}")
-                if attempt < max_retries - 1:
-                    import time
-                    time.sleep(2)
-                    continue
-                return None
+                        continue  # Retry same model
+                    break  # Try next model after timeout
+                except Exception as e:
+                    logger.warning(f"  Error: {e}")
+                    if attempt < max_retries - 1:
+                        import time
+                        time.sleep(2)
+                        continue  # Retry same model
+                    break  # Try next model after error
         
-        logger.warning("All retry attempts failed")
+        # If we get here, all models failed
+        logger.warning("❌ All AI models failed to generate metadata")
+        sys.stdout.flush()
         return None
     
     def run(self) -> bool:
