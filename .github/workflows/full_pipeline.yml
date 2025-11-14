@@ -1,6 +1,6 @@
 name: Full Video Production Pipeline
 
-on:
+off:
   schedule:
     - cron: '0 0 * * *'   # Run 1: 00:00 UTC (midnight)
     - cron: '0 8 * * *'   # Run 3: 08:00 UTC (4 hours after Run 2)
