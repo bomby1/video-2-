@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from typing import Optional, Dict, Any
 from datetime import datetime
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 try:
@@ -37,7 +38,7 @@ class ProvenBrowser:
     Replaces the complex login logic with simple session loading.
     """
     
-    # CapCut URLs
+    # CapCut URLs (kept for backward compatibility, but not used for routing)
     CAPCUT_LOGIN_URL = "https://www.capcut.com/login"
     CAPCUT_DASHBOARD_URL = "https://www.capcut.com/workspace"
     CAPCUT_CREATE_URL = "https://www.capcut.com/editor"
@@ -51,7 +52,7 @@ class ProvenBrowser:
         else:
             load_dotenv()
         
-        # Project paths
+        # Project paths (original behavior: state under project root parent)
         self.project_root = Path(__file__).parent.parent
         self.state_dir = self.project_root / "state"
         self.proven_session_file = self.state_dir / "proven_session.json"
@@ -98,6 +99,8 @@ class ProvenBrowser:
                 }
             
             method = session_data['method']
+            website_url = session_data.get('website_url', 'https://www.capcut.com')
+            website_name = session_data.get('website_name', 'unknown')
             
             if method == 'undetected_chromedriver':
                 if 'cookies' not in session_data or len(session_data['cookies']) == 0:
@@ -115,6 +118,8 @@ class ProvenBrowser:
                 return {
                     "valid": True,
                     "method": method,
+                    "website_url": website_url,
+                    "website_name": website_name,
                     "cookies_count": len(session_data['cookies']),
                     "age_hours": round(age_hours, 1),
                     "user_agent": session_data.get('user_agent', 'Unknown'),
@@ -133,6 +138,8 @@ class ProvenBrowser:
                 return {
                     "valid": True,
                     "method": method,
+                    "website_url": website_url,
+                    "website_name": website_name,
                     "message": "Playwright session available"
                 }
                 
@@ -200,19 +207,26 @@ class ProvenBrowser:
                 ]
             )
             
+            # Determine target website and domain from session data
+            website_url = session_data.get('website_url', 'https://www.capcut.com')
+            parsed = urlparse(website_url)
+            base_domain = parsed.netloc or 'www.capcut.com'
+            default_cookie_domain = '.' + base_domain.lstrip('.')
+            user_agent = session_data.get('user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+
             # Create context
             self.context = self.browser.new_context(
                 viewport={'width': 1280, 'height': 720},
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                user_agent=user_agent
             )
             
             # Load cookies from session data
             if 'cookies' in session_data:
                 print("🍪 Loading cookies from proven session...")
                 
-                # Go to CapCut first
+                # Go to target website first so domain is correct (works for any site)
                 page = self.context.new_page()
-                page.goto("https://www.capcut.com")
+                page.goto(website_url)
                 time.sleep(2)
                 
                 # Add cookies
@@ -223,7 +237,7 @@ class ProvenBrowser:
                         pw_cookie = {
                             'name': cookie['name'],
                             'value': cookie['value'],
-                            'domain': cookie.get('domain', '.capcut.com'),
+                            'domain': cookie.get('domain', default_cookie_domain),
                             'path': cookie.get('path', '/'),
                             'httpOnly': cookie.get('httpOnly', False),
                             'secure': cookie.get('secure', False)
@@ -276,6 +290,12 @@ class ProvenBrowser:
                 ]
             )
             
+            # Determine target website and domain
+            website_url = session_data.get('website_url', 'https://www.capcut.com')
+            parsed = urlparse(website_url)
+            base_domain = parsed.netloc or 'www.capcut.com'
+            default_cookie_domain = '.' + base_domain.lstrip('.')
+
             # Create context
             self.context = self.browser.new_context(
                 viewport={'width': 1280, 'height': 720},
@@ -286,8 +306,8 @@ class ProvenBrowser:
             print("🍪 Loading cookies from proven session...")
             page = self.context.new_page()
             
-            # Go to CapCut first to set domain
-            page.goto("https://www.capcut.com")
+            # Go to target website first to set domain
+            page.goto(website_url)
             time.sleep(2)
             
             # Add cookies from Selenium session
@@ -298,7 +318,7 @@ class ProvenBrowser:
                     playwright_cookie = {
                         'name': cookie['name'],
                         'value': cookie['value'],
-                        'domain': cookie.get('domain', '.capcut.com'),
+                        'domain': cookie.get('domain', default_cookie_domain),
                         'path': cookie.get('path', '/'),
                         'httpOnly': cookie.get('httpOnly', False),
                         'secure': cookie.get('secure', False)
@@ -323,7 +343,9 @@ class ProvenBrowser:
             
             # Test if session works
             print("🧪 Testing session validity...")
-            page.goto("https://www.capcut.com/workspace")
+            test_urls = session_data.get('test_urls') or [website_url]
+            test_target = test_urls[0]
+            page.goto(test_target)
             time.sleep(3)
             
             if "login" not in page.url.lower():
@@ -389,7 +411,7 @@ class ProvenBrowser:
     
     def is_session_valid(self, context: BrowserContext) -> bool:
         """
-        Check if the current session is valid by testing CapCut access.
+        Check if the current session is valid by testing access to the saved website.
         
         Args:
             context: Browser context to test
@@ -400,10 +422,26 @@ class ProvenBrowser:
         try:
             print("🧪 Validating session...")
             
+            # Load website_url and test_urls from proven_session.json
+            website_url = "https://www.capcut.com"
+            test_target = None
+            try:
+                if self.proven_session_file.exists():
+                    with open(self.proven_session_file, 'r') as f:
+                        session_data = json.load(f)
+                    website_url = session_data.get('website_url', website_url)
+                    test_urls = session_data.get('test_urls') or [website_url]
+                    test_target = test_urls[0]
+            except Exception:
+                test_target = None
+
+            if not test_target:
+                test_target = website_url
+
             page = context.new_page()
             
-            # Test workspace access
-            page.goto("https://www.capcut.com/workspace", timeout=30000)
+            # Test access to target page (works for TikTok, YouTube, etc.)
+            page.goto(test_target, timeout=30000)
             time.sleep(3)
             
             current_url = page.url.lower()
@@ -445,7 +483,7 @@ class ProvenBrowser:
         
         return False
     
-    def create_selenium_driver_with_session(self) -> Optional[webdriver.Chrome]:
+    def create_selenium_driver_with_session(self) -> Optional[Any]:
         """
         Create Selenium driver with proven session (for advanced use cases).
         
@@ -468,6 +506,8 @@ class ProvenBrowser:
             # Load session data
             with open(self.proven_session_file, 'r') as f:
                 session_data = json.load(f)
+
+            website_url = session_data.get('website_url', 'https://www.capcut.com')
             
             # Create undetected Chrome driver
             options = uc.ChromeOptions()
@@ -477,7 +517,7 @@ class ProvenBrowser:
             self.selenium_driver = uc.Chrome(options=options)
             
             # Load cookies
-            self.selenium_driver.get("https://www.capcut.com")
+            self.selenium_driver.get(website_url)
             time.sleep(2)
             
             for cookie in session_data.get('cookies', []):

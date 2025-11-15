@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-FIXED PROVEN SOLUTION - Fixes session loading and automation issues
+FIXED PROVEN SOLUTION - Universal Browser Session Manager
+Store and reuse browser sessions for ANY website (CapCut, YouTube, Instagram, etc.)
 """
 
 import os
@@ -47,14 +48,16 @@ except ImportError:
 
 class FixedProvenSolution:
     """
-    Fixed version that properly handles session saving and loading.
+    Universal browser session manager for any website.
+    Properly handles session saving and loading.
     """
     
-    def __init__(self):
+    def __init__(self, website_name="default"):
         self.project_root = Path(__file__).parent
         self.state_dir = self.project_root / "state"
         self.state_dir.mkdir(exist_ok=True)
-        self.session_file = self.state_dir / "proven_session.json"
+        self.website_name = website_name.lower().replace(" ", "_")
+        self.session_file = self.state_dir / f"{self.website_name}_session.json"
     
     def check_session_file(self):
         """Check if session file exists and is valid."""
@@ -85,8 +88,13 @@ class FixedProvenSolution:
             print(f"❌ Error reading session file: {e}")
             return False
     
-    def method1_undetected_chromedriver(self):
-        """Method 1: Undetected ChromeDriver - Most popular working solution."""
+    def method1_undetected_chromedriver(self, website_url, test_urls=None):
+        """Method 1: Undetected ChromeDriver - Most popular working solution.
+        
+        Args:
+            website_url: Main URL to visit (e.g., "https://www.capcut.com")
+            test_urls: List of URLs to test after login (optional)
+        """
         if not SELENIUM_AVAILABLE:
             print("❌ Selenium/undetected-chromedriver not available")
             return False
@@ -109,86 +117,88 @@ class FixedProvenSolution:
             
             print("✅ Undetected Chrome started!")
             
-            # Go to CapCut
-            print("📱 Going to CapCut...")
-            driver.get("https://www.capcut.com")
+            # Go to website
+            print(f"📱 Going to {website_url}...")
+            driver.get(website_url)
             time.sleep(3)
             
             print("\n" + "=" * 60)
-            print("MANUAL LOGIN - GOOGLE WON'T DETECT THIS!")
+            print("MANUAL LOGIN - AUTOMATION UNDETECTED!")
             print("=" * 60)
-            print("1. Click 'Sign In' or 'Log In' in the browser")
-            print("2. Click 'Continue with Google'")
-            print("3. Login to Google (it should work now!)")
-            print("4. Complete CapCut login")
-            print("5. Wait for CapCut dashboard")
-            input("6. Press ENTER when login is complete: ")
+            print("1. Complete the login process in the browser")
+            print("2. Navigate to any pages you want to test")
+            print("3. Make sure you're fully logged in")
+            input("4. Press ENTER when login is complete: ")
             
-            # Test workspace
-            print("🧪 Testing CapCut workspace...")
-            driver.get("https://www.capcut.com/workspace")
-            time.sleep(3)
+            # Test URLs if provided
+            if test_urls:
+                for i, test_url in enumerate(test_urls, 1):
+                    print(f"🧪 Testing URL {i}/{len(test_urls)}: {test_url}")
+                    driver.get(test_url)
+                    time.sleep(3)
+                    
+                    if "login" not in driver.current_url.lower() and "signin" not in driver.current_url.lower():
+                        print(f"✅ URL {i} accessible!")
+                    else:
+                        print(f"⚠️  URL {i} may require login")
             
-            if "login" not in driver.current_url.lower():
-                print("✅ CapCut workspace accessible!")
+            # Always save session regardless of test results
+            current_url = driver.current_url
+            if "login" not in current_url.lower() and "signin" not in current_url.lower():
+                print("✅ Session appears valid!")
+                    
+            
+            # Save cookies for future use
+            print("💾 Saving session cookies...")
+            cookies = driver.get_cookies()
+            
+            # Get additional browser info
+            user_agent = driver.execute_script("return navigator.userAgent;")
+            current_url = driver.current_url
+            
+            session_data = {
+                'method': 'undetected_chromedriver',
+                'website_url': website_url,
+                'website_name': self.website_name,
+                'cookies': cookies,
+                'user_agent': user_agent,
+                'last_url': current_url,
+                'test_urls': test_urls or [],
+                'timestamp': time.time(),
+                'success': True
+            }
+            
+            # Save with error handling
+            try:
+                with open(self.session_file, 'w') as f:
+                    json.dump(session_data, f, indent=2)
                 
-                # Test editor
-                driver.get("https://www.capcut.com/editor")
-                time.sleep(3)
+                print(f"✅ Session saved successfully!")
+                print(f"   Website: {self.website_name}")
+                print(f"   File: {self.session_file}")
+                print(f"   Cookies saved: {len(cookies)}")
+                print(f"   User agent: {user_agent[:50]}...")
                 
-                if "login" not in driver.current_url.lower():
-                    print("✅ CapCut editor accessible!")
-                    
-                    # Save cookies for future use
-                    print("💾 Saving session cookies...")
-                    cookies = driver.get_cookies()
-                    
-                    # Get additional browser info
-                    user_agent = driver.execute_script("return navigator.userAgent;")
-                    current_url = driver.current_url
-                    
-                    session_data = {
-                        'method': 'undetected_chromedriver',
-                        'cookies': cookies,
-                        'user_agent': user_agent,
-                        'last_url': current_url,
-                        'timestamp': time.time(),
-                        'success': True
-                    }
-                    
-                    # Save with error handling
-                    try:
-                        with open(self.session_file, 'w') as f:
-                            json.dump(session_data, f, indent=2)
-                        
-                        print(f"✅ Session saved successfully!")
-                        print(f"   File: {self.session_file}")
-                        print(f"   Cookies saved: {len(cookies)}")
-                        print(f"   User agent: {user_agent[:50]}...")
-                        
-                    except Exception as e:
-                        print(f"❌ Error saving session: {e}")
-                        driver.quit()
-                        return False
-                    
-                    print("🎉 SUCCESS with undetected ChromeDriver!")
-                    
-                    driver.quit()
-                    return True
-                else:
-                    print("❌ CapCut editor not accessible")
-            else:
-                print("❌ CapCut workspace not accessible")
+            except Exception as e:
+                print(f"❌ Error saving session: {e}")
+                driver.quit()
+                return False
+            
+            print("🎉 SUCCESS with undetected ChromeDriver!")
             
             driver.quit()
-            return False
+            return True
             
         except Exception as e:
             print(f"❌ Undetected ChromeDriver method failed: {e}")
             return False
     
-    def run_automation_with_session(self):
-        """Run automation using saved session - FIXED VERSION."""
+    def run_automation_with_session(self, test_url=None):
+        """Run automation using saved session - FIXED VERSION.
+        
+        Args:
+            test_url: Optional URL to test after loading session
+        """
         print("🔍 Checking saved session...")
         
         if not self.check_session_file():
@@ -204,7 +214,11 @@ class FixedProvenSolution:
                 session_data = json.load(f)
             
             method = session_data.get('method', 'playwright')
+            website_url = session_data.get('website_url', 'https://www.google.com')
+            website_name = session_data.get('website_name', self.website_name)
+            
             print(f"🔧 Session method: {method}")
+            print(f"🌐 Website: {website_name}")
             
             if method == 'undetected_chromedriver' and SELENIUM_AVAILABLE:
                 print("🥷 Using undetected ChromeDriver for automation...")
@@ -220,8 +234,8 @@ class FixedProvenSolution:
                     
                     print("✅ Chrome started! Loading session...")
                     
-                    # Go to CapCut first
-                    driver.get("https://www.capcut.com")
+                    # Go to website first
+                    driver.get(website_url)
                     time.sleep(2)
                     
                     # Load saved cookies
@@ -241,27 +255,29 @@ class FixedProvenSolution:
                     driver.refresh()
                     time.sleep(3)
                     
-                    # Test access to editor
-                    print("🧪 Testing CapCut editor access...")
-                    driver.get("https://www.capcut.com/editor")
-                    time.sleep(5)
+                    # Test access to specified URL or saved test URLs
+                    if test_url:
+                        print(f"🧪 Testing access to: {test_url}")
+                        driver.get(test_url)
+                        time.sleep(5)
+                    elif session_data.get('test_urls'):
+                        test_url = session_data['test_urls'][0]
+                        print(f"🧪 Testing saved URL: {test_url}")
+                        driver.get(test_url)
+                        time.sleep(5)
                     
                     current_url = driver.current_url.lower()
                     print(f"📍 Current URL: {driver.current_url}")
                     
                     if "login" not in current_url and "signin" not in current_url:
-                        print("✅ CapCut automation ready!")
+                        print(f"✅ {website_name} automation ready!")
                         print("🎬 You can now add your automation logic!")
                         print()
                         print("=" * 50)
                         print("AUTOMATION READY - ADD YOUR TASKS HERE")
                         print("=" * 50)
                         print("The browser is logged in and ready.")
-                        print("You can now:")
-                        print("- Upload videos")
-                        print("- Create projects")
-                        print("- Apply effects")
-                        print("- Export videos")
+                        print("You can now perform automated tasks on this website.")
                         print("=" * 50)
                         
                         input("Press ENTER to close browser: ")
@@ -293,8 +309,8 @@ class FixedProvenSolution:
                         context = browser.new_context()
                         page = context.new_page()
                         
-                        # Go to CapCut and add cookies
-                        page.goto("https://www.capcut.com")
+                        # Go to website and add cookies
+                        page.goto(website_url)
                         
                         for cookie in session_data['cookies']:
                             try:
@@ -306,11 +322,12 @@ class FixedProvenSolution:
                         page = context.new_page()
                     
                     # Test access
-                    page.goto("https://www.capcut.com/editor", timeout=60000)
+                    test_target = test_url or session_data.get('test_urls', [website_url])[0]
+                    page.goto(test_target, timeout=60000)
                     time.sleep(3)
                     
                     if "login" not in page.url.lower():
-                        print("✅ CapCut automation ready!")
+                        print(f"✅ {website_name} automation ready!")
                         print("🎬 Add your automation logic here...")
                         
                         input("Press ENTER to close browser: ")
@@ -329,14 +346,19 @@ class FixedProvenSolution:
 def main():
     """Main function with fixed session handling."""
     print("=" * 70)
-    print("🥷 FIXED PROVEN CAPCUT SOLUTIONS")
+    print("🥷 UNIVERSAL BROWSER SESSION MANAGER")
     print("=" * 70)
-    print("Fixed session saving and loading issues!")
+    print("Store and reuse sessions for ANY website!")
     print()
     
-    solution = FixedProvenSolution()
+    # Get website information
+    print("Enter website information:")
+    website_name = input("Website name (e.g., CapCut, YouTube, Instagram): ").strip() or "default"
     
-    print("Choose a method:")
+    solution = FixedProvenSolution(website_name)
+    
+    print(f"\n📁 Session file: {solution.session_file.name}")
+    print("\nChoose a method:")
     print("1. 🥷 Undetected ChromeDriver Login (do this first)")
     print("2. 🚀 Run automation with saved session (FIXED)")
     print("3. 🔍 Check saved session status")
@@ -344,8 +366,17 @@ def main():
     choice = input("\nEnter choice (1-3): ").strip()
     
     if choice == "1":
+        website_url = input("\nEnter website URL (e.g., https://www.capcut.com): ").strip()
+        if not website_url.startswith('http'):
+            website_url = 'https://' + website_url
+        
+        # Optional: test URLs
+        print("\nOptional: Enter test URLs to verify after login (comma-separated, or press ENTER to skip):")
+        test_urls_input = input("Test URLs: ").strip()
+        test_urls = [url.strip() for url in test_urls_input.split(',') if url.strip()] if test_urls_input else None
+        
         print("\n🥷 Starting undetected ChromeDriver login...")
-        success = solution.method1_undetected_chromedriver()
+        success = solution.method1_undetected_chromedriver(website_url, test_urls)
         if success:
             print("\n🎉 SUCCESS! Login completed and session saved!")
             print("Now you can run option 2 for automation!")
@@ -353,8 +384,11 @@ def main():
             print("\n❌ Login failed.")
     
     elif choice == "2":
+        test_url_input = input("\nOptional: Enter URL to test (or press ENTER to use saved): ").strip()
+        test_url = test_url_input if test_url_input else None
+        
         print("\n🚀 Starting automation with saved session...")
-        success = solution.run_automation_with_session()
+        success = solution.run_automation_with_session(test_url)
         if success:
             print("\n🎉 Automation completed!")
         else:

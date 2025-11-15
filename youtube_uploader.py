@@ -207,12 +207,59 @@ class YouTubeUploader:
             traceback.print_exc()
             return None
     
+    def _sanitize_tags(self, tags: list) -> list:
+        """
+        Sanitize tags to meet YouTube API requirements:
+        - Remove invalid characters (< > angle brackets)
+        - Limit each tag to 30 characters
+        - Ensure total length is under 400 characters
+        - Remove empty tags
+        """
+        if not tags:
+            return []
+        
+        sanitized = []
+        total_length = 0
+        
+        for tag in tags:
+            if not tag or not isinstance(tag, str):
+                continue
+            
+            # Remove invalid characters
+            clean_tag = tag.replace('<', '').replace('>', '').strip()
+            
+            # Skip empty tags
+            if not clean_tag:
+                continue
+            
+            # Limit individual tag length to 30 characters
+            if len(clean_tag) > 30:
+                clean_tag = clean_tag[:30].strip()
+            
+            # Check if adding this tag would exceed 400 character limit
+            # Account for comma separators between tags
+            tag_contribution = len(clean_tag) + (1 if sanitized else 0)
+            
+            if total_length + tag_contribution > 400:
+                logger.warning(f"Tag limit reached (400 chars). Skipping remaining tags.")
+                break
+            
+            sanitized.append(clean_tag)
+            total_length += tag_contribution
+        
+        logger.info(f"Tags sanitized: {len(tags)} -> {len(sanitized)} tags, {total_length} total characters")
+        return sanitized
+    
     def _load_metadata(self, metadata_path: Optional[str], video_path: str) -> Dict:
         """Load metadata from JSON or create default"""
         if metadata_path and Path(metadata_path).exists():
             logger.info(f"Loading metadata: {metadata_path}")
             with open(metadata_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                metadata = json.load(f)
+                # Sanitize tags
+                if 'tags' in metadata:
+                    metadata['tags'] = self._sanitize_tags(metadata['tags'])
+                return metadata
         else:
             # Default metadata from video filename
             video_name = Path(video_path).stem
