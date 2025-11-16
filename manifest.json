@@ -18,7 +18,7 @@
   "add_subscribe_popup": false,
   "_music_comment": "Background music with smooth blending (ENABLED for engagement!)",
   "background_music": "background.mp3",
-  "background_music_volume": 0.2,
+  "background_music_volume": 0.6,
   "_ai_comment": "AI features: subtitle extraction and YouTube metadata generation",
   "extract_subtitles": true,
   "generate_metadata": true,
